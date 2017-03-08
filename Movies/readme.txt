@@ -1,0 +1,1 @@
+This folder should be used to output movies / animations to.
