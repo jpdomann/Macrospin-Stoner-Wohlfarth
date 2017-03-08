@@ -1,1 +1,1 @@
-This folder should be used to output movies / animations to.
+This folder should be used to output movies / animations. These files will not sync with git, as they are included in the .gitignore file
