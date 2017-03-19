@@ -13,7 +13,13 @@ classdef MSProperties_ < matlab.mixin.Copyable
         Crystal         %Type of crystal: cubic, hex, amorphous
         K_mca           %MCA coefficients
         B_me            %Magnetoelastic Coefficients
-        Alpha           %Gilbert Damping                
+        Alpha           %Gilbert Damping 
+        Kuni            %uniaxial anisotropy coefficient
+        dir_uni         %uniaxial anisotropy axis
+        Keb             %exchange bias anisotropy coefficient
+        dir_eb          %exchange bias direction
+        Ks              %surface PMA coefficient
+        Kpma            %PMA coefficient Kpma=Ks/t, t is thickness
     end
     properties (Constant)
         mu0 = 4*pi*1e-7;    %[H/m] vacuum permeability
@@ -30,15 +36,21 @@ classdef MSProperties_ < matlab.mixin.Copyable
             'K_mca',    'MCA Coefficients [K1,K2,...]',         'J/m^3';...
             'B_me',     'Magnetoelastic Coefficients',          'J/m^3';...
             'Alpha',    'Gilbert Damping',                      '';...
+            'Kuni',     'Uniaxial anisotropy coefficient',      'J/m^3';...
+            'dir_uni',  'Uniaxial anisotropy axis',             '';...
+            'Keb',      'Exchange bias coefficient',            'J/m^3';...
+            'dir_eb',   'Exchange bias direction',              '';...
+            'Ks',       'surface coefficient',                  '';...
+            'Kpma',     'PMA coefficient',                      '';...
             };
-        Available_Mats = 'Iron, Nickel, Cobalt';
+        Available_Mats = 'Iron, Nickel, Cobalt, CoFeB';
         Allowable_Shapes = {'Ellipse','Rectangle'};
         Allowable_Crystals = {'Cubic','Hexagonal','Amorphous','Poly'};
     end
     properties (SetAccess = protected)
-        Gamma %= mu0*Gamma_e;
-        Factor_1 % = Gamma / (1 + Alpha^2);
-        Factor_2 % = Gamma * Alpha / (1 + Alpha^2);
+        Gamma       %= mu0*Gamma_e;
+        Factor_1    % = Gamma / (1 + Alpha^2);
+        Factor_2    % = Gamma * Alpha / (1 + Alpha^2);
     end
     methods
         %Default Constructor
@@ -100,6 +112,8 @@ classdef MSProperties_ < matlab.mixin.Copyable
             obj = check_Ms(obj);
             obj = check_Crystal(obj);
             obj = check_Factors(obj);
+            obj = check_PMA(obj);
+            obj = check_Directions(obj);
         end
 
         function obj = Load_Default_Material(obj,MatName)
@@ -132,6 +146,13 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function obj = DefaultProperties(obj,input)
+
+%set remaining properties (these will be overwritten later if the user
+%specified them)
+obj.Location = [0,0,0];
+obj.Shape = 'Ellipse';
+obj.Dims = [1 1 1];
+
 switch input
     case 'Nickel'
         obj.Mat_Name = 'Nickel';
@@ -140,6 +161,7 @@ switch input
         obj.K_mca = [-4.5E3,-2.3E3];	%OHandley page 216 (189)
         obj.B_me = [6.2e6 4.3e6];       %OHandley page 257 (230)
         obj.Alpha = 0.01;
+        obj.Ks = -2.6e-4;        
     case 'Iron'
         obj.Mat_Name = 'Iron';
         obj.Ms = 1714*1e3;
@@ -147,6 +169,7 @@ switch input
         obj.K_mca = [48E3,-10E3];	%OHandley page 216 (189)
         obj.B_me = [-2.9e6 2.9e6];  %OHandley page 257 (230)
         obj.Alpha = 0.01;
+        obj.Ks = 0;
     case 'Cobalt'
         obj.Mat_Name = 'Cobalt';
         obj.Ms = 1422*1e3;
@@ -154,15 +177,18 @@ switch input
         obj.K_mca = [450E3,150E3, 0];	%Cullity page 241(227)
         obj.B_me = [6e6 13e6];          %OHandley page 257 (230)
         obj.Alpha = 0.01;
+        obj.Ks = 0;
+    case 'CoFeB'
+        obj.Mat_Name = 'CoFeB';
+        obj.Ms = 1200*1e3;
+        obj.Crystal = 'Poly';
+        obj.K_mca = [0,0];              %negligible for poly-crystal
+        obj.B_me = [-2.7e7 -2.7e7];     %use lambda_s = 150ppm
+        obj.Alpha = 0.01;
+        obj.Ks = -1.5e-3;
     otherwise
         error('Single input needs to be valid material name:\n%s',obj.Available_Mats')
 end
-
-%set remaining properties (these will be overwritten later if the user
-%specified them)
-obj.Location = [0,0,0];
-obj.Shape = 'Ellipse';
-obj.Dims = [1 1 1];
 
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -236,7 +262,6 @@ if ~check
     error('%s is not an allowable Crystal. Allowable crystals are: \n%s',current_val,strjoin(allowable,', '))
 end
 
-
 %check K values
 current_K = obj.K_mca;
 %cubic and hex crystals must have K_mca values entered
@@ -264,4 +289,34 @@ switch obj.Crystal
 end
 
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                        
+function obj = check_PMA(obj)
+%update PMA terms
+obj.Kpma = obj.Ks/obj.Dims(3);
+
+end 
+
+function obj = check_Directions(obj)
+%uniaxial anisotropy directions
+obj.dir_uni = anisotropy_direction_check(obj.dir_uni);
+
+%exchange bias anisotropy directions
+obj.dir_eb = anisotropy_direction_check(obj.dir_eb);
+
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function anis_direc = anisotropy_direction_check(anis_direc)
+
+switch isempty(anis_direc)
+    case 1 
+        anis_direc = zeros(3,1);
+    case 0
+        %make column vector
+        anis_direc  = anis_direc(:); 
+        %check for correct number of dimensions
+        if numel(anis_direc) ~= 3; error('Must input a 3 dimensional vector for dir_uni');end 
+        %normalize to one
+        anis_direc  = anis_direc  ./ norm(anis_direc );
+end
+
+end

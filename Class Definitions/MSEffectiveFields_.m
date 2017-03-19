@@ -3,6 +3,9 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
     %   Detailed explanation goes here
     
     properties %(GetAccess = protected)
+        %fields must be named in the form H#_NAME, where # is 1-3, and NAME
+        %is the name of the desired field
+        
         %external field anisotropy
         H1_Zeeman
         H2_Zeeman
@@ -27,6 +30,16 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
         H1_EB
         H2_EB
         H3_EB
+        
+        %PMA anisotropy
+        H1_PMA
+        H2_PMA
+        H3_PMA
+        
+        %SOT
+        H1_SOT
+        H2_SOT
+        H3_SOT
         
         %total energy
         H1_total
@@ -76,6 +89,21 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
                 obj.H2_EB = @(m1,m2,m3,H1,H2,H3) 0*m1;
                 obj.H3_EB = @(m1,m2,m3,H1,H2,H3) 0*m1;
                 
+                 %PMA anisotropy
+                obj.H1_PMA = @(m3) 0;
+                obj.H2_PMA = @(m3) 0;
+                obj.H3_PMA = @(m3) -1/(obj.MP.mu0*obj.MP.Ms).*2*obj.MP.Kpma*m3;
+                
+                %SOT - damping like torque
+                obj.H1_SOT = @(m1,m2,m3,sigma1,sigma2,sigma3) m2*sigma3-m3*sigma2;
+                obj.H2_SOT = @(m1,m2,m3,sigma1,sigma2,sigma3) m3*sigma1-m1*sigma3;
+                obj.H3_SOT = @(m1,m2,m3,sigma1,sigma2,sigma3) m1*sigma2-m2*sigma1;     
+                %SOT - field like torque
+%                 obj.H1_SOT = @(m1,m2,m3,sigma1,sigma2,sigma3) -sigma1;     
+%                 obj.H2_SOT = @(m1,m2,m3,sigma1,sigma2,sigma3) -sigma2; 
+%                 obj.H3_SOT = @(m1,m2,m3,sigma1,sigma2,sigma3) -sigma3;
+                
+
             else
                 error('MSEnergy must be constructed with an "MSProperties_" class argument (MSEnergy_(MSProperties_))')
             end

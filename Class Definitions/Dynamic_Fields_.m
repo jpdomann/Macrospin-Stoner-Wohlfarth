@@ -3,19 +3,23 @@
     %   Detailed explanation goes here
     
     properties
-        H1
+        H1          %magnetic field
         H2
         H3
-        S1
+        S1          %strain (engineering / voigt notation)
         S2
         S3
         S4
         S5
         S6
+        sigma1      %current (for spin orbit torque)
+        sigma2 
+        sigma3 
         t
     end
     properties (Access = public, Constant = true)
-       Property_List = {'H1','H2','H3','S1','S2','S3','S4','S5','S6','t'}; 
+       Property_List = {'H1','H2','H3','S1','S2','S3','S4','S5','S6',...
+           'sigma1','sigma2','sigma3','t'}; 
     end
     methods
         function obj = Dynamic_Fields_(varargin)
@@ -29,6 +33,9 @@
                 obj.S4 = 0;
                 obj.S5 = 0;
                 obj.S6 = 0;
+                obj.sigma1 = 0;
+                obj.sigma2 = 0;
+                obj.sigma3 = 0;
                 obj.t = 0;
             else
                 %separate input into property / value pairs

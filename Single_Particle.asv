@@ -20,7 +20,7 @@ npts = numel(time);
 
 %% Driving fields
 %Applied magnetic field (A/m)
-H0 = 0e6;
+H0 = 1e6;
 
 % H1 = 0*cos(2*pi*freq*time);   %sinusoidal
 % H2 = 0*sin(2*pi*freq*time);
@@ -35,18 +35,17 @@ H3 = linspace(0,H0 ,npts);
 % H3 = H0*ones(1,numel(time));
 
 %Appliedd strain (-)
-SMax = 1000e-6;
+SMax = 0e-6;
 
-% S1 = SMax*rectpuls(time-2e-9,2e-9);
-S1 = linspace(0,SMax,npts);
+S1 = SMax*rectpuls(time-2e-9,2e-9);
 S2 = zeros(size(H1)); 
 S3 = S2;
 S4 = S2; S5 = S2; S6 = S2;
 
 %SOT current
-IMax = 5e5;  
-sigma1 = 0*ones(size(H1));
-sigma2 = IMax*ones(size(H1));
+IMax = 0;  
+sigma1 = IMax*ones(size(H1));
+sigma2 = linspace(0,0,npts);
 sigma3 = linspace(0,0,npts);
 
 %% Create particle
@@ -57,7 +56,7 @@ sigma3 = linspace(0,0,npts);
 % prop_list = s.Properties.Property_List; 
 
 %Example to construct a rectangular iron particle
-n = MSParticle_('Mat_Name','CoFeB','Shape','Ellipse','Dims',[50 50 16]*1e-9,'Location',[0 0 0]);
+n = MSParticle_('Mat_Name','CoFeB','Shape','Ellipse','Dims',[50 50 1.6]*1e-9,'Location',[0 0 0]);
 % n.Properties.Crystal = 'Amorphous';     %and change other properties
 % n.Properties.Dims = [100 100 100]*1e-9;   %update the dimensions
 n.Properties.Alpha = 5e-1;              %Gilbert Damping
@@ -130,7 +129,7 @@ model.Plots.fig_num = 1;
 model.Plots.Animate_Spins(1,{'dynamic'})
 
 %% Save Movie
-% model.Plots.make_movie(1,{'dynamic'},'LLG - test movie')
+model.Plots.make_movie(1,{'dynamic'},'LLG - test movie')
 
 disp('end')
 

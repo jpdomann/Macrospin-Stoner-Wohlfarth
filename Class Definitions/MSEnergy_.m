@@ -2,20 +2,16 @@ classdef MSEnergy_< matlab.mixin.Copyable
     %ENERGY_EXPRESSIONS_' Summary of this class goes here
     %   Detailed explanation goes here
     
-    properties %(GetAccess = protected)
-        %external field anisotropy
-        U_Zeeman
-        %Demag anisotropy
-        U_Demag
-        DemagFactors        
-        %Crystalline anisotropy
-        U_MCA
-        %magnetoelastic anisotropy
-        U_ME
-        %exchange bias anisotropy
-        U_EB
-        %total energy
-        U_total               
+    properties %(GetAccess = protected)        
+        U_Zeeman	%external field anisotropy
+        U_Demag     %Demag anisotropy
+        DemagFactors                
+        U_MCA       %Crystalline anisotropy        
+        U_ME        %magnetoelastic anisotropy        
+        U_EB        %exchange bias anisotropy        
+        U_uni       %uniaxial anisotropy        
+        U_PMA       %PMA energy (Uniaxial in z-direction)        
+        U_total     %total energy
     end
     
     properties (Hidden = true)
@@ -49,8 +45,15 @@ classdef MSEnergy_< matlab.mixin.Copyable
                     obj.MP.B_me(1).*((m1.^2-1/3).*s1 + (m2.^2-1/3).*s2 + (m3.^2-1/3).*s3) + ...
                     obj.MP.B_me(2).*(m2.*m3.*s4 + m1.*m3.*s5 + m1.*m2.*s6);
                 
+                %uniaxial anisotropy
+                obj.U_uni = @(m1,m2,m3) 0*m1;
+                
                 %exchange bias anisotropy
-                obj.U_EB = @(m1,m2,m3,H1,H2,H3) 0*m1;
+                obj.U_EB = @(m1,m2,m3) 0*m1;
+                
+                %PMA energy E=Km3^2
+                obj.U_PMA = @(m3) ...
+                    obj.MP.Kpma.*(m3.^2);
                 
             else
                 error('MSEnergy must be constructed with an "MSProperties_" class argument (MSEnergy_(MSProperties_))')
