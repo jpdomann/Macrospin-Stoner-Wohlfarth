@@ -113,6 +113,7 @@ classdef MSProperties_ < matlab.mixin.Copyable
             obj = check_Crystal(obj);
             obj = check_Factors(obj);
             obj = check_PMA(obj);
+            obj = check_K(obj);
             obj = check_Directions(obj);
         end
 
@@ -295,11 +296,24 @@ function obj = check_PMA(obj)
 obj.Kpma = obj.Ks/obj.Dims(3);
 
 end 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function obj = check_K(obj)
+%uniaxial anisotropy
+switch isempty(obj.Kuni)        
+    case 1
+        obj.Kuni = 0;
+end
+%exchange bias anisotropy
+switch isempty(obj.Keb)        
+    case 1
+        obj.Keb = 0;
+end
 
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function obj = check_Directions(obj)
 %uniaxial anisotropy directions
 obj.dir_uni = anisotropy_direction_check(obj.dir_uni);
-
 %exchange bias anisotropy directions
 obj.dir_eb = anisotropy_direction_check(obj.dir_eb);
 
@@ -308,15 +322,21 @@ end
 function anis_direc = anisotropy_direction_check(anis_direc)
 
 switch isempty(anis_direc)
-    case 1 
+    case 1 %if no direction is provided, set to zero
         anis_direc = zeros(3,1);
-    case 0
-        %make column vector
-        anis_direc  = anis_direc(:); 
+    case 0 %if direction is provided, normalize to one
         %check for correct number of dimensions
         if numel(anis_direc) ~= 3; error('Must input a 3 dimensional vector for dir_uni');end 
         %normalize to one
-        anis_direc  = anis_direc  ./ norm(anis_direc );
+        switch all(anis_direc==0) 
+            case 0 %if a non-zero vector is entered
+                anis_direc  = anis_direc  ./ norm(anis_direc );
+            case 1 %if a zero vector is entered
+              anis_direc = zeros(3,1);  
+        end
 end
+%make column vector
+anis_direc  = anis_direc(:);
 
 end
+

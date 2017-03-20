@@ -31,6 +31,11 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
         H2_EB
         H3_EB
         
+        %exchange bias anisotropy
+        H1_UNI
+        H2_UNI
+        H3_UNI
+        
         %PMA anisotropy
         H1_PMA
         H2_PMA
@@ -85,11 +90,16 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
                     obj.MP.B_me(1).*( (2.*m3).*s3 ) +  obj.MP.B_me(2).*(m2.*s4 + m1.*s5) );
                 
                 %exchange bias anisotropy
-                obj.H1_EB = @(m1,m2,m3,H1,H2,H3) 0*m1;
-                obj.H2_EB = @(m1,m2,m3,H1,H2,H3) 0*m1;
-                obj.H3_EB = @(m1,m2,m3,H1,H2,H3) 0*m1;
+                obj.H1_EB = @(m1,m2,m3) 0*m1;
+                obj.H2_EB = @(m1,m2,m3) 0*m2;
+                obj.H3_EB = @(m1,m2,m3) 0*m3;
                 
-                 %PMA anisotropy
+                %uniaxial anisotropy
+                obj.H1_UNI = @(m1,m2,m3) 0*m1;
+                obj.H2_UNI = @(m1,m2,m3) 0*m2;
+                obj.H3_UNI = @(m1,m2,m3) 0*m3;
+                
+                %PMA anisotropy
                 obj.H1_PMA = @(m3) 0;
                 obj.H2_PMA = @(m3) 0;
                 obj.H3_PMA = @(m3) -1/(obj.MP.mu0*obj.MP.Ms).*2*obj.MP.Kpma*m3;
