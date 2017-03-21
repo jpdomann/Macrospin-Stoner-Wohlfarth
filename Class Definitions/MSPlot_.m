@@ -60,7 +60,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
                     str = sprintf('The first input must be a 1 dimensional array of numbers indicating which particles to plot.');
                     warning(str)
             end             
-            [Prop,Val] = PropertyValue(varargin); %get extra input arguments
+            [Prop,Val] = MS.PropertyValue(varargin); %get extra input arguments
             %check input properties
             
             %Load relevant data
@@ -188,7 +188,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
             switch mod(numel(varargin),3)
                 case 0
                     %get input triplets
-                    [particle_num, Xstr, Ystr] = PropertyValue3(varargin);
+                    [particle_num, Xstr, Ystr] = MS.PropertyValue3(varargin);
                 otherwise
                     msg = sprintf(['Plot_Particle accepts lists containing sequenes of three items:',...
                         '\n 1 - Particle Number \n 2 - X Data (string) \n 3 - Y Data (string)',...
@@ -294,7 +294,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
             if ~iscell(data_type); data_type = {data_type}; end
             if numel(data_type)==1; data_type = repmat(data_type,size(particle_nums)); end
             
-            [Prop,Val] = PropertyValue(varargin); %get extra input arguments
+            [Prop,Val] = MS.PropertyValue(varargin); %get extra input arguments
             %check input properties
             
             %Load relevant data

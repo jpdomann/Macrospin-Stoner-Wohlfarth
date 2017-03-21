@@ -40,7 +40,7 @@ classdef MSState_ < matlab.mixin.Copyable
                     %separate input into property / value pairs
                     %these should only contain initial magnetization
                     %directions
-                    [prop, val] = PropertyValue(varargin(2:end));
+                    [prop, val] = MS.PropertyValue(varargin(2:end));
                     %add Init_ if prop's are of form 'm#'
                     
                     %Check for wrong inputs

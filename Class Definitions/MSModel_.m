@@ -90,7 +90,7 @@ classdef MSModel_<handle
                         'MaxStep',1e-10);
                 case 1 %assign input options
                     %separate input into property / value pairs
-                    [prop, val] = PropertyValue(varargin(2:end));
+                    [prop, val] = MS.PropertyValue(varargin(2:end));
                     
                     %get 'solver' if one was entered
                     solv_ind = strcmp(prop,'solver');
@@ -137,7 +137,7 @@ classdef MSModel_<handle
                         'TolFun',1e-4);
                 case 1 %assign input options
                     %separate input into property / value pairs
-                    [prop, val] = PropertyValue(varargin(2:end));
+                    [prop, val] = MS.PropertyValue(varargin(2:end));
                     
                     %initialize
                     if isempty(obj.ode_options)

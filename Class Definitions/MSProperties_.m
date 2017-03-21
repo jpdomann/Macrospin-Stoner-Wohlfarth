@@ -75,7 +75,7 @@ classdef MSProperties_ < matlab.mixin.Copyable
                 
             else
                 %separate input into property / value pairs
-                [prop, val] = PropertyValue(varargin);
+                [prop, val] = MS.PropertyValue(varargin);
                 
                 %Check for wrong inputs
                 Allowable_Props = {obj.Property_List{2:end,1}};

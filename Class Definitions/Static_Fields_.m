@@ -30,7 +30,7 @@ classdef Static_Fields_ < matlab.mixin.Copyable
                 obj.S6 = 0;
             else
                 %separate input into property / value pairs
-                [prop, val] = PropertyValue(varargin);
+                [prop, val] = MS.PropertyValue(varargin);
                 
                 %Check for wrong inputs
                 Allowable_Props = obj.Property_List;
