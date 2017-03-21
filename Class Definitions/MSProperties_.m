@@ -181,7 +181,7 @@ switch input
         obj.Ks = 0;
     case 'CoFeB'
         obj.Mat_Name = 'CoFeB';
-        obj.Ms = 1200*1e3;
+        obj.Ms = 1.2e6; %Chen - 1.11e6, QC 1.2e6;
         obj.Crystal = 'Poly';
         obj.K_mca = [0,0];              %negligible for poly-crystal
         obj.B_me = [-2.7e7 -2.7e7];     %use lambda_s = 150ppm

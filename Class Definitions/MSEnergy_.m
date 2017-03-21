@@ -35,10 +35,10 @@ classdef MSEnergy_< matlab.mixin.Copyable
                     -obj.MP.mu0.*obj.MP.Ms.*(m1.*H1+ m2.*H2 + m3.*H3);
                 
                 %Demag anisotropy
-                obj = Demag_Anisotropy(obj);
+                obj = MS.Demag_Anisotropy(obj);
                 
                 %Crystalline anisotropy
-                obj = MagnetoCrystalline_Anisotropy(obj);
+                obj = MS.MagnetoCrystalline_Anisotropy(obj);
                 
                 %magnetoelastic anisotropy (OHandley page 259 (232) )
                 obj.U_ME = @(m1,m2,m3,s1,s2,s3,s4,s5,s6) ...
@@ -51,10 +51,17 @@ classdef MSEnergy_< matlab.mixin.Copyable
                     obj.MP.dir_uni(3).*m3 ).^2;
                 
                 %exchange bias anisotropy
-                obj.U_EB = @(m1,m2,m3) obj.MP.Keb.*(obj.MP.dir_eb(1).*m1+...
-                    obj.MP.dir_eb(2).*m2+...
-                    obj.MP.dir_eb(3).*m3);
-                
+                switch isnumeric(obj.MP.Keb) && isempty(MS.argument_list(obj.MP.Keb))
+                    case 1
+                        obj.U_EB = @(m1,m2,m3) obj.MP.Keb.*(obj.MP.dir_eb(1).*m1+...
+                            obj.MP.dir_eb(2).*m2+...
+                            obj.MP.dir_eb(3).*m3);
+                    case 0 %allow Keb to be a function of other parameters
+                        arg_list = MS.argument_list(obj.MP.Keb);
+                        str = ['obj.U_EB = @(m1,m2,m3,',strjoin(arg_list,','),') obj.MP.Keb(',strjoin(arg_list,','),').*(obj.MP.dir_eb(1).*m1+ obj.MP.dir_eb(2).*m2+ obj.MP.dir_eb(3).*m3);'];
+                        eval(str)
+                        
+                end
                 %PMA energy E=Km3^2
                 obj.U_PMA = @(m3) ...
                     obj.MP.Kpma.*(m3.^2);
@@ -66,36 +73,13 @@ classdef MSEnergy_< matlab.mixin.Copyable
             
         end
         %% Total Energy
-        function obj = Compute_Total_Energy(obj)                                    
-            %Sort out energy terms from property list
-            Property_list = properties(obj);
-            Energy_ind = ~cellfun(@isempty,strfind(Property_list, 'U_'));
-            Energy_list = Property_list(Energy_ind);
-            Energy_list = setdiff(Energy_list,'U_total');
-            
-            %Determine input variables for all energy expressions
-            variable_set = cell(1,numel(Energy_list));
-            for i = 1:numel(Energy_list)
-                temp_func = obj.(Energy_list{i});
-                fstr = func2str(temp_func);                
-%                 expr = '[\(,]{1}(\w*)[,\)]{1}';
-                expr = '[\(,]{1}([a-zA-Z]+[1-6]?)[,\)]{1}';
-                [~,endInd] = regexp(fstr,expr );
-                [~,tokens1] = regexp(fstr,expr,'match','tokens');                
-                [~,tokens2] = regexp(fstr(endInd(1):end),expr,'match','tokens');  
-                
-                %combine tokens
-                temp_vars = {};
-                nVars = numel(tokens1) + numel(tokens2);                
-                temp_vars(1:2:nVars) = [tokens1{:}] ;
-                temp_vars(2:2:nVars) = [tokens2{:}] ;                     
-                variable_set{i} = temp_vars;
-            end
-            
+        function obj = Compute_Total_Energy(obj)       
+                                         
             %Determine unique variables
+            [variable_set, Energy_list] = MS.Energy_argument_list(obj);     
             unique_variables = unique([variable_set{:}]);
             
-            %assemble total energy 
+            %assemble total energy expression
             eval_str = ['obj.',Energy_list{1},['(',strjoin(variable_set{1},','),')']];
             for i = 2:numel(Energy_list)                
                 eval_str = [eval_str, ' + ',['obj.',Energy_list{i},['(',strjoin(variable_set{i},','),')']] ];
@@ -128,35 +112,4 @@ classdef MSEnergy_< matlab.mixin.Copyable
     end      
 end
 
-%% Function for class only
-function obj = Demag_Anisotropy(obj)
 
-N = DemagFactor(obj.MP.Shape,obj.MP.Dims);
-obj.DemagFactors = N;
-obj.U_Demag = @(m1,m2,m3) 1/2.*obj.MP.mu0*obj.MP.Ms^2*.../
-    (N(1)*m1.^2 + N(2)*m2.^2 + N(3)*m3.^2);
-end
-
-function obj = MagnetoCrystalline_Anisotropy(obj)
-crystal = obj.MP.Crystal;
-K = obj.MP.K_mca;
-switch crystal
-    case 'Cubic'
-        obj.U_MCA = @(m1,m2,m3) K(1).*(m1.^2 .* m2.^2 + m1.^2 .* m3.^2 + m2.^2 .* m3.^2 ) +...
-            K(2).*(m1.^2 .* m2.^2 .* m3.^2);     %Cullity - pg 215
-    case 'Hexagonal'
-        sTh2 = @(m3) 1-m3.^2;    %sin(theta)^2
-        phi = @(m1,m2) atan2(m2,m1);
-        obj.U_MCA = @(m1,m2,m3) K(1).*sTh2(m3) + K(2).*sTh2(m3).^2 + ...
-            K(3).*sTh2(m3).^3.*cos(6.*phi(m1,m2));
-    case 'Amorphous'
-        obj.U_MCA = @(m1,m2,m3) 0*(m1+m2+m3);   %leave values so it returns the right size
-    case 'Poly'
-        obj.U_MCA = @(m1,m2,m3) 0*(m1+m2+m3);   %leave values so it returns the right size
-    otherwise
-        error('%s is not an accepted crystal type. Allowable crystals are: \n%s',crystal,strjoin(obj.MP.Allowable_Crystals,', ' ))
-        
-end
-
-
-end

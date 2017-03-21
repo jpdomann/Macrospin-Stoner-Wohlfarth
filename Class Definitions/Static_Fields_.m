@@ -53,7 +53,7 @@ classdef Static_Fields_ < matlab.mixin.Copyable
                 end
                 
                 %Check MSParticle is in a valid state
-                obj = Check_Numeric_Arrays(obj,obj.Property_List,'Static Field Arrays');
+                obj = MS.Check_Numeric_Arrays(obj,obj.Property_List,'Static Field Arrays');
             end
             
         end

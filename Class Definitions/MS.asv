@@ -24,7 +24,6 @@ classdef MS < handle
             end
             
         end
-        
         function [particle_num, Xstr, Ystr] = PropertyValue3(input)
             %PROPERTYVALUE3 separate the input cell array into property-value triplets
             %   Input should be an 1x3^n cell array of property-value pairs
@@ -154,10 +153,10 @@ classdef MS < handle
             end
             
             %Ensure monotonic behavior of data (add / subtract eps
-            Hfall = MS.makeMonotonic(Hfall);
-            Mfall = MS.makeMonotonic(Mfall);
-            Hrise = MS.makeMonotonic(Hrise);
-            Mrise = MS.makeMonotonic(Mrise);
+            Hfall = makeMonotonic(Hfall);
+            Mfall = makeMonotonic(Mfall);
+            Hrise = makeMonotonic(Hrise);
+            Mrise = makeMonotonic(Mrise);
             
             %Fit an interpolation curve for each region
             fit = 'linear';
@@ -385,45 +384,7 @@ classdef MS < handle
             end
         end
         
-        %% Utility Function - Make Monotonic
-        function [ x_mono ] = makeMonotonic( x )
-            %MAKEMONOTONIC makes sure data is either monotonically increasing or
-            %decreasing
-            
-            
-            min_val = 1e-13;
-            difference = diff(x);
-            switch x(1) < x(end)
-                case 1 % data is increasing
-                    if any(difference <=0)
-                        I = difference <= 0;
-                        I = [I(:);false];
-                        if find(I == 1) > 1
-                            x(I) = x(I)+min_val;
-                        elseif find(I == 1) == 1
-                            x(I) = x(I)-min_val;
-                        end
-                    end
-                case 0 %data is decreasing
-                    if any(difference >=0)
-                        I = difference >= 0;
-                        I = [I(:);false];
-                        if find(I == 1) > 1
-                            x(I) = x(I)-min_val;
-                        elseif find(I == 1) == 1
-                            x(I) = x(I)+min_val;
-                        end
-                    end
-            end
-            
-            x_mono = x;
-            
-        end
-        
-        %%
-        
-        %%
-               
+        %%Utility Function - M        
     end
     
 end

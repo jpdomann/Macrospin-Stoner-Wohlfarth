@@ -62,7 +62,7 @@
                 end
                 
                 %Check MSParticle is in a valid state
-                obj = Check_Numeric_Arrays(obj,obj.Property_List,'Dynamic Field Arrays');
+                obj = MS.Check_Numeric_Arrays(obj,obj.Property_List,'Dynamic Field Arrays');
             end
             
         end

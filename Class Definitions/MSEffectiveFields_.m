@@ -90,14 +90,24 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
                     obj.MP.B_me(1).*( (2.*m3).*s3 ) +  obj.MP.B_me(2).*(m2.*s4 + m1.*s5) );
                 
                 %exchange bias anisotropy
-                obj.H1_EB = @(m1,m2,m3) 0*m1;
-                obj.H2_EB = @(m1,m2,m3) 0*m2;
-                obj.H3_EB = @(m1,m2,m3) 0*m3;
+                switch isnumeric(obj.MP.Keb) && isempty(MS.argument_list(obj.MP.Keb))                    
+                    case 1
+                        h = -obj.MP.Keb/(obj.MP.mu0*obj.MP.Ms);
+                        obj.H1_EB = @(m1,m2,m3) h*obj.MP.dir_eb(1);
+                        obj.H2_EB = @(m1,m2,m3) h*obj.MP.dir_eb(2);
+                        obj.H3_EB = @(m1,m2,m3) h*obj.MP.dir_eb(3);
+                    case 0 
+                        arg_list = MS.argument_list(obj.MP.Keb);
+                        for i = 1:3
+                            str = ['obj.H',num2str(i),'_EB = @(',strjoin(arg_list,','),') -obj.MP.Keb(',strjoin(arg_list,','),')/(obj.MP.mu0*obj.MP.Ms) .* obj.MP.dir_eb(',num2str(i),');'];
+                            eval(str);
+                        end
+                end
                 
-                %uniaxial anisotropy
-                obj.H1_UNI = @(m1,m2,m3) 0*m1;
-                obj.H2_UNI = @(m1,m2,m3) 0*m2;
-                obj.H3_UNI = @(m1,m2,m3) 0*m3;
+                %uniaxial anisotropy                
+                obj.H1_UNI = @(m1,m2,m3) 2*obj.MP.Kuni ./ (obj.MP.mu0*obj.MP.Ms) .* (obj.MP.dir_uni(1).^2.*m1);
+                obj.H2_UNI = @(m1,m2,m3) 2*obj.MP.Kuni ./ (obj.MP.mu0*obj.MP.Ms) .* (obj.MP.dir_uni(2).^2.*m2);
+                obj.H3_UNI = @(m1,m2,m3) 2*obj.MP.Kuni ./ (obj.MP.mu0*obj.MP.Ms) .* (obj.MP.dir_uni(3).^2.*m3);
                 
                 %PMA anisotropy
                 obj.H1_PMA = @(m3) 0;
@@ -182,32 +192,8 @@ end
 end
 
 function obj = assign_fields(obj,name)
-%Sort out energy terms from property list
-Property_list = properties(obj);
-ind = ~cellfun(@isempty,strfind(Property_list, [name,'_']));
-list = Property_list(ind);
-list = setdiff(list,[name,'_total']);
-
-%Determine input variables for all energy expressions
-variable_set = cell(1,numel(list));
-for i = 1:numel(list)
-    temp_func = obj.(list{i});
-    fstr = func2str(temp_func);
-    %expr = '[\(,]{1}(\w*)[,\)]{1}';
-    expr = '[\(,]{1}([a-zA-Z]+[1-6]?)[,\)]{1}';
-    [~,endInd] = regexp(fstr,expr );
-    [~,tokens1] = regexp(fstr,expr,'match','tokens');
-    [~,tokens2] = regexp(fstr(endInd(1):end),expr,'match','tokens');
-    
-    %combine tokens
-    temp_vars = {};
-    nVars = numel(tokens1) + numel(tokens2);
-    temp_vars(1:2:nVars) = [tokens1{:}] ;
-    temp_vars(2:2:nVars) = [tokens2{:}] ;
-    variable_set{i} = temp_vars;
-end
-
 %Determine unique variables
+[variable_set,list] = MS.Energy_argument_list(obj);
 unique_variables = unique([variable_set{:}]);
 
 %assemble total energy

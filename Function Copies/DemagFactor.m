@@ -92,8 +92,4 @@ N(Sort_ind(1))= N1;
 N(Sort_ind(2))= N2;
 N(Sort_ind(3))= N3;
 
-
-%% Debug
-
-
 end

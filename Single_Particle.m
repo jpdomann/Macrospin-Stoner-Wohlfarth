@@ -60,7 +60,8 @@ IMax = 0e4;
 n = MSParticle_('Mat_Name','Nickel','Shape','Ellipse','Dims',[100 80 10]*1e-9,'Location',[0 0 0]);
 % n.Properties.Crystal = 'Amorphous';     %and change other properties
 % n.Properties.Dims = [100 100 100]*1e-9;   %update the dimensions
-n.Properties.Keb = -mu0*n.Properties.Ms*0.5e4;
+% n.Properties.Keb = -mu0*n.Properties.Ms*0.5e4;
+n.Properties.Keb = @(s1,s2,s3) -mu0*n.Properties.Ms*0.5e4 * s1;
 n.Properties.dir_eb = [1 0 0]; 
 n.Properties.Alpha = 5e-1;              %Gilbert Damping
 n.Set_State('m',[.1 .1 1]);               %initial magnetization
