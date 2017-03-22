@@ -282,12 +282,8 @@ classdef MSModel_<handle
                 ang0(2,i) = atan2(m0(2,i), m0(1,i) );                       %phi
             end
             
-            if model.Display
-                p = ProgressBar(1e3);%progress bar
-            else 
-                p = [];
-            end
-            
+            p = ProgressBar(1e3);%progress bar
+                       
             % Create anonymous ODE function to be solved
             dang_dt = @(t,ang) LLG_angular_equation(t,ang,model,model.particles, nparts,time,p);
             %solve LLG equation
@@ -303,9 +299,7 @@ classdef MSModel_<handle
                     [t_solved,ang_solved]  = ode15s(dang_dt, time, ang0(:), model.ode_options);
             end
             
-            if model.Display
-                p.stop; %stop progress bar
-            end
+            p.stop; %stop progress bar
             
             %ensure t_solved = time
             switch all(t_solved(:) == time(:));
@@ -629,10 +623,7 @@ phi = zeros(npts,nparts);
 theta0 = zeros(1,nparts);
 phi0 = theta0;
 
-if model.Display
-    p = ProgressBar(npts);   % setup progress bar
-end
-
+p = ProgressBar(npts);   % setup progress bar                
 for i = 1:npts          %loop over all field points, and find local minimum state
     converged = false; 
     count = 1;
@@ -692,13 +683,9 @@ for i = 1:npts          %loop over all field points, and find local minimum stat
         phi(i,:) = mod(angles(nparts+1:end),2*pi);                
         count = count + 1; 
     end
-    if model.Display
-        p.progress; %update progress bar
-    end
+    p.progress; %update progress bar
 end
-if model.Display
-    p.stop;             %stop progress bar
-end
+p.stop;             %stop progress bar
 
 end
 
@@ -721,10 +708,7 @@ phi = zeros(npts,nparts);
 theta0 = zeros(1,nparts);
 phi0 = theta0;
 
-if model.Display
-    p = ProgressBar(npts);  % setup progress bar
-end
-
+p = ProgressBar(npts);  % setup progress bar
 % Find equilibrium orientations
 for i = 1:npts %loop over all field points, and find local minimum state
     for j = 1:nparts        
@@ -745,13 +729,9 @@ for i = 1:npts %loop over all field points, and find local minimum state
     theta(i,:) = angles(1:nparts);          %store equilibrium angles
     phi(i,:) = angles(nparts+1:end);
     
-    if model.Display
-        p.progress;         %update progress bar
-    end
+    p.progress;         %update progress bar
 end
-if model.Display
-    p.stop;                 %stop progress bar
-end
+p.stop;                 %stop progress bar
 
 end
 
@@ -834,9 +814,7 @@ dif = progress - model.progress;
 switch dif > 0
     case 1
         for i = 1:dif
-            if model.Display
-                pb.progress;
-            end
+            pb.progress;
             model.progress = model.progress + 1;
         end
     case 0
