@@ -259,6 +259,9 @@ classdef MSModel_<handle
             % Convert back to direction cosines
             [m1,m2,m3] = sph2cart(phi,pi/2-theta,ones(size(phi)));
             for i = 1:nparts
+                particles{i}.State.set_state(theta(:,i),'Stat_theta');
+                particles{i}.State.set_state(phi(:,i),'Stat_phi');
+                
                 particles{i}.State.set_state(m1(:,i),'Stat_m1');
                 particles{i}.State.set_state(m2(:,i),'Stat_m2');
                 particles{i}.State.set_state(m3(:,i),'Stat_m3');

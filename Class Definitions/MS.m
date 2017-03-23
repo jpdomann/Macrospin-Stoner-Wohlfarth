@@ -188,9 +188,7 @@ classdef MS < handle
             % plot(Hc,Mc,'g*',Heb,Meb,'g*')
             % grid on
             
-        end
-        
-
+        end        
 
         %% Check Numeric Arrays
         function [ obj ] = Check_Numeric_Arrays(obj,Property_List,err_name)

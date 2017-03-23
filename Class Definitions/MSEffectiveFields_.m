@@ -92,14 +92,14 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
                 %exchange bias anisotropy
                 switch isnumeric(obj.MP.Keb) && isempty(MS.argument_list(obj.MP.Keb))                    
                     case 1
-                        h = -obj.MP.Keb/(obj.MP.mu0*obj.MP.Ms);
+                        h = obj.MP.Keb/(obj.MP.mu0*obj.MP.Ms);
                         obj.H1_EB = @(m1,m2,m3) h*obj.MP.dir_eb(1);
                         obj.H2_EB = @(m1,m2,m3) h*obj.MP.dir_eb(2);
                         obj.H3_EB = @(m1,m2,m3) h*obj.MP.dir_eb(3);
                     case 0 
                         arg_list = MS.argument_list(obj.MP.Keb);
                         for i = 1:3
-                            str = ['obj.H',num2str(i),'_EB = @(',strjoin(arg_list,','),') -obj.MP.Keb(',strjoin(arg_list,','),')/(obj.MP.mu0*obj.MP.Ms) .* obj.MP.dir_eb(',num2str(i),');'];
+                            str = ['obj.H',num2str(i),'_EB = @(',strjoin(arg_list,','),') obj.MP.Keb(',strjoin(arg_list,','),')/(obj.MP.mu0*obj.MP.Ms) .* obj.MP.dir_eb(',num2str(i),');'];
                             eval(str);
                         end
                 end

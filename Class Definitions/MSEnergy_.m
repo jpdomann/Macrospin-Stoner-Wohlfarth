@@ -53,12 +53,12 @@ classdef MSEnergy_< matlab.mixin.Copyable
                 %exchange bias anisotropy
                 switch isnumeric(obj.MP.Keb) && isempty(MS.argument_list(obj.MP.Keb))
                     case 1
-                        obj.U_EB = @(m1,m2,m3) obj.MP.Keb.*(obj.MP.dir_eb(1).*m1+...
+                        obj.U_EB = @(m1,m2,m3) -obj.MP.Keb.*(obj.MP.dir_eb(1).*m1+...
                             obj.MP.dir_eb(2).*m2+...
                             obj.MP.dir_eb(3).*m3);
                     case 0 %allow Keb to be a function of other parameters
                         arg_list = MS.argument_list(obj.MP.Keb);
-                        str = ['obj.U_EB = @(m1,m2,m3,',strjoin(arg_list,','),') obj.MP.Keb(',strjoin(arg_list,','),').*(obj.MP.dir_eb(1).*m1+ obj.MP.dir_eb(2).*m2+ obj.MP.dir_eb(3).*m3);'];
+                        str = ['obj.U_EB = @(m1,m2,m3,',strjoin(arg_list,','),') -obj.MP.Keb(',strjoin(arg_list,','),').*(obj.MP.dir_eb(1).*m1+ obj.MP.dir_eb(2).*m2+ obj.MP.dir_eb(3).*m3);'];
                         eval(str)
                         
                 end

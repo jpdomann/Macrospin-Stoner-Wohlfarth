@@ -8,6 +8,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
         fig_num         %number of figure to plot in
         plot_handle     %can be returned from plot functions
         frame_data      %used to create animations
+        animation_view  %view for animations (2,3 or [Az El]), see: view
     end
     properties (SetAccess = protected)
         Source_field_names
@@ -16,8 +17,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
     
     properties (Access = protected)
         model 
-        save_frames     %save frames to output a movie file
-        animation_view  %view for animations (2,3 or [Az El]), see: view
+        save_frames     %save frames to output a movie file        
         animation_zoom  %zoom level for animations
     end
     
@@ -397,7 +397,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
             obj.save_frames = true;
             obj.animation_zoom = 1;
 %             obj.animation_view = [-21 22]; 
-            obj.animation_view = [3]; 
+%             obj.animation_view = [3]; 
 %             fname = 'bennet-clocking-2';
             %generate data
             [~,h] = obj.Animate_Spins(particle_nums,data_type);
@@ -416,6 +416,180 @@ classdef MSPlot_ < matlab.mixin.Copyable
             %restore default to NOT storing movie frames
             obj.save_frames = false;
         end
+    
+        function [obj,h] = animate_energy_2d(obj,particle_num,data_type,varargin)
+            %Plot the 2D energy surface for the indicated particles
+            % data should be entered as an array containing the numbers of
+            % which particles to plot
+            
+            %% input check
+            %initial input check
+            switch isnumeric(particle_num) && all(ismember(data_type,{'static','dynamic'})) && (numel(data_type)==numel(particle_num) || numel(data_type)==1 )
+                case 0
+                    str = sprintf(['The first input must be a 1 dimensional array of numbers indicating which particles to plot.',...
+                        '\nThe second input must be a cell array of strings with ''static'' or ''dynamic''. The cell array can have\n',...
+                        'either one element, or as many elements as the number array, so you can combine static / dynamic plots)']);
+                    error(str)
+            end
+            if numel(particle_num)>1
+                error('Only one particle at a time can be analyzed using animate_energy_2d')
+            end
+            
+            %make sure data_type is a cell with the same number of entries
+            %as particle_nums. If the initial size is 1, duplicate the same
+            %entry for all particles
+            if ~iscell(data_type); data_type = {data_type}; end
+            if numel(data_type)==1; data_type = repmat(data_type,size(particle_num)); end
+            
+            [Prop,Val] = MS.PropertyValue(varargin); %get extra input arguments
+            %check input properties
+            
+            %% Load relevant data           
+            particle = obj.model.particles{particle_num};
+            switch data_type{1}
+                case 'static'
+                    H1 = particle.SourceFields.static.H1;
+                    H2 = particle.SourceFields.static.H2;
+                    H3 = particle.SourceFields.static.H3;
+                    S1 = particle.SourceFields.static.S1;
+                    S2 = particle.SourceFields.static.S2;
+                    S3 = particle.SourceFields.static.S3;
+                    S4 = particle.SourceFields.static.S4;
+                    S5 = particle.SourceFields.static.S5;
+                    S6 = particle.SourceFields.static.S6;
+                case 'dynamic'
+                    H1 = particle.SourceFields.dynamic.H1;
+                    H2 = particle.SourceFields.dynamic.H2;
+                    H3 = particle.SourceFields.dynamic.H3;
+                    S1 = particle.SourceFields.dynamic.S1;
+                    S2 = particle.SourceFields.dynamic.S2;
+                    S3 = particle.SourceFields.dynamic.S3;
+                    S4 = particle.SourceFields.dynamic.S4;
+                    S5 = particle.SourceFields.dynamic.S5;
+                    S6 = particle.SourceFields.dynamic.S6;
+            end
+            
+            %% grid out m vector to plot
+            npts = 1e3;
+            theta = linspace(0,360,npts);
+            m1 = cosd(theta);
+            m2 = sind(theta);
+            m3 = zeros(size(m1));
+            
+            %% Compute Energy Terms
+            U_H = @(i) particle.Energy.U_Zeeman(m1,m2,m3,H1(i),H2(i),H3(i));
+            U_D = @(i) particle.Energy.U_Demag(m1,m2,m3);
+            U_ME = @(i) particle.Energy.U_ME(m1,m2,m3,...
+               S1(i),S2(i),S3(i),S4(i),S5(i),S6(i));
+           switch nargin(particle.Energy.U_EB) 
+               case 3
+                   U_EB = @(i) particle.Energy.U_EB(m1,m2,m3);
+               case 5
+                   U_EB = @(i) particle.Energy.U_EB(m1,m2,m3,S1(i),S2(i));
+                   case 9
+                   U_EB = @(i) particle.Energy.U_EB(m1,m2,m3,S1(i),S2(i),S3(i),S4(i),S5(i),S6(i));
+           end
+            U_UNI = @(i) particle.Energy.U_uni(m1,m2,m3);            
+            U_TOT = @(i) particle.Energy.U_total(H1(i),H2(i),H3(i),m1,m2,m3,...
+                S1(i),S2(i),S3(i),S4(i),S5(i),S6(i));
+            
+            %% Determine energy bounds
+%             U_min = zeros(1,numel(H1)); U_max = U_min; 
+            for i = 1:numel(H1)
+                U_min(i,:) = min([U_H(i)',U_D(i)',U_ME(i)',U_EB(i)',U_UNI(i)',U_TOT(i)']);                
+                U_max(i,:) = max([U_H(i)',U_D(i)',U_ME(i)',U_EB(i)',U_UNI(i)',U_TOT(i)']);
+            end
+            U_min = min(U_min);
+            U_max = max(U_max);
+            U_range = U_max - U_min;
+            
+            %% Initialize plot window
+            fig = gobjects(1);  %initialize figure handles
+            ax = fig;           %initialize axis handles
+            leg = gobjects(2); 	%initialize legend handles
+            
+            %create first figure object
+            fig = figure(obj.fig_num);
+            clf            
+            
+            ax(1) = subplot(2,1,1);
+            hline{1} = plot(theta,[U_H(1)'-U_min(1),...
+                U_D(1)'-U_min(2),...
+                U_ME(1)'-U_min(3),...
+                U_EB(1)'-U_min(4),...
+                U_UNI(1)'-U_min(5),...
+                U_TOT(1)'-U_min(6)]);
+            hline{1}(1).DisplayName = 'H';
+            hline{1}(2).DisplayName = 'D';
+            hline{1}(3).DisplayName = 'ME';
+%             hline{1}(3).Marker = '.';
+            hline{1}(4).DisplayName = 'EB';
+            hline{1}(5).DisplayName = 'UNI';
+            hline{1}(6).DisplayName = 'TOT';            
+            leg(1) = legend('show');
+            uistack(hline{1}(1),'bottom')
+            
+            
+            xlim([0, 360])
+            ylim([0 U_range(6)])
+%             ylim([10^(log10(U_range)-1) U_range])
+            xlabel('\theta (deg)')
+            ylabel('U (J/m^3)')
+%             ax(1).YScale = 'log';
+            
+            ax(2) = subplot(2,1,2);            
+            hline{2}(1) = energy_plot(U_H,theta,min(U_min),U_range(end),1,'H');
+            hold all
+            hline{2}(2) = energy_plot(U_D,theta,min(U_min),U_range(end),1,'D');
+            hline{2}(3) = energy_plot(U_ME,theta,min(U_min),U_range(end),1,'ME');
+            hline{2}(4) = energy_plot(U_EB,theta,min(U_min),U_range(end),1,'EB');
+            hline{2}(5) = energy_plot(U_UNI,theta,min(U_min),U_range(end),1,'UNI');
+            hline{2}(6) = energy_plot(U_TOT,theta,min(U_min),U_range(end),1,'TOT');                                  
+           
+            xlim([-1,1])
+            ylim([-1 1])            
+            xlabel('m_x')
+            ylabel('m_y')
+            
+            %% Animate
+            for j = 1:1
+                for i = 1:numel(H1)
+                    
+                    subplot(2,1,1)
+                    hline{1}(1).YData = U_H(i)'-U_min(1);
+                    hline{1}(2).YData = U_D(i)'-U_min(2);
+                    hline{1}(3).YData = U_ME(i)'-U_min(3);
+                    hline{1}(4).YData = U_EB(i)'-U_min(4);
+                    hline{1}(5).YData = U_UNI(i)'-U_min(5);
+                    hline{1}(6).YData = U_TOT(i)'-U_min(6);
+                    
+                    subplot(2,1,2)
+                    [X,Y] = pol2cart(pi/180*theta',(U_H(i)'- min(U_min))/U_range(end) );
+                    hline{2}(1).XData = X;  hline{2}(1).YData = Y;
+                    
+                    [X,Y] = pol2cart(pi/180*theta',(U_D(i)'- min(U_min))/U_range(end) );
+                    hline{2}(2).XData = X;  hline{2}(2).YData = Y;
+                    
+                    [X,Y] = pol2cart(pi/180*theta',(U_ME(i)'- min(U_min))/U_range(end) );
+                    hline{2}(3).XData = X;  hline{2}(3).YData = Y;
+                    
+                    [X,Y] = pol2cart(pi/180*theta',(U_EB(i)'- min(U_min))/U_range(end) );
+                    hline{2}(4).XData = X;  hline{2}(4).YData = Y;
+                    
+                    [X,Y] = pol2cart(pi/180*theta',(U_UNI(i)'- min(U_min))/U_range(end) );
+                    hline{2}(5).XData = X;  hline{2}(5).YData = Y;
+                    
+                    [X,Y] = pol2cart(pi/180*theta',(U_TOT(i)'- min(U_min))/U_range(end) );
+                    hline{2}(6).XData = X;  hline{2}(6).YData = Y;
+                    
+                    drawnow
+                end
+            end
+            
+        end
+        
+        %%
+        
     end
 end
 
@@ -425,6 +599,12 @@ end
 %                               Local Functions                           %
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [h] = energy_plot(U,theta,umin,urange,i,str)
+[X,Y] = pol2cart(pi/180*theta',(U(i)'-umin)/urange );
+h = plot(X,Y,'DisplayName',str);
+
+end
 
 
 % %% Plots

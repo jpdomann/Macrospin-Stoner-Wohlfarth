@@ -187,6 +187,14 @@ switch input
         obj.B_me = [-2.7e7 -2.7e7];     %use lambda_s = 150ppm
         obj.Alpha = 0.01;
         obj.Ks = -1.5e-3;
+    case 'Galfenol'
+        obj.Mat_Name = 'Galfenol';
+        obj.Ms = 1.456e6;                 %
+        obj.Crystal = 'Poly';
+        obj.K_mca = [0,0];              %negligible for poly-crystal
+        obj.B_me = [-2.1635e+07 -4.3269e+07];     %use lambda_s = 150ppm
+        obj.Alpha = 0.01;
+        obj.Ks = -1.5e-3;
     otherwise
         error('Single input needs to be valid material name:\n%s',obj.Available_Mats')
 end
@@ -284,9 +292,13 @@ switch obj.Crystal
     case 'Amorphous'
         %auto set K_mca to zero
         obj.K_mca = 0;
+        %isotropic magnetoelasticity
+        obj.B_me(2) = 2*obj.B_me(1);
     case 'Poly'
         %auto set K_mca to zero
         obj.K_mca = 0;
+        %isotropic magnetoelasticity
+        obj.B_me(2) = 2*obj.B_me(1);
 end
 
 end
