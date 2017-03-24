@@ -350,7 +350,7 @@ classdef MS < handle
             end                        
         end
 
-        %% Anonymous Function Variables
+        %% Anonymous Function Argument / Variable List
         function [args,list] = Energy_argument_list(obj)
             %ENERGY_ARGUMENT_LIST takes an input MSEnergy_ object, and returns the
             %argument list for each of the energy terms

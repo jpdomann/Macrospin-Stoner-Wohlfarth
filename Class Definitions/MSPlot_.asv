@@ -587,8 +587,8 @@ classdef MSPlot_ < matlab.mixin.Copyable
                     hline{1}(3).YData = U_ME(i)'-U_min(3);
                     hline{1}(4).YData = U_EB(i)'-U_min(4);
                     hline{1}(5).YData = U_UNI(i)'-U_min(5);                    
-                    hline{1}(7).YData = U_MCA(i)'-U_min(7);
-                    hline{1}(8).YData = U_TOT(i)'-U_min(8);
+                    hline{1}(7).YData = U_TOT(i)'-U_min(7);
+                    hline{1}(7).YData = U_TOT(i)'-U_min(7);
                     
                     subplot(2,1,2)
                     [X,Y] = pol2cart(pi/180*theta',(U_H(i)'- min(U_min))/U_range(end) );

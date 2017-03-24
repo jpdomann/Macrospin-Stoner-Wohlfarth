@@ -192,9 +192,17 @@ switch input
         obj.Ms = 1.456e6;                 %
         obj.Crystal = 'Poly';
         obj.K_mca = [0,0];              %negligible for poly-crystal
-        obj.B_me = [-2.1635e+07 -4.3269e+07];     %use lambda_s = 150ppm
+        obj.B_me = [-2.1635e+7 -4.3269e+7];     %use lambda_s = 150ppm
         obj.Alpha = 0.01;
-        obj.Ks = -1.5e-3;
+        obj.Ks = 0e-3;
+    case 'Galfenol-single-crystal'
+        obj.Mat_Name = 'Galfenol-single-crystal';
+        obj.Ms = 1.456e6;                 %
+        obj.Crystal = 'Cubic';
+        obj.K_mca = [13e3, -90e3];              %negligible for poly-crystal
+        obj.B_me = [-9.84e+6 4.797e+6];     %use lambda_s = 150ppm
+        obj.Alpha = 0.01;
+        obj.Ks = 0e-3;
     otherwise
         error('Single input needs to be valid material name:\n%s',obj.Available_Mats')
 end

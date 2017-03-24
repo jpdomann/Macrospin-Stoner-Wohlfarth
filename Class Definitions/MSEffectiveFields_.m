@@ -79,7 +79,7 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
                 obj.H3_Demag = @(m1,m2,m3) -obj.MP.Ms*N(3)*m3;
                 
                 %Crystalline anisotropy
-                obj = MagnetoCrystalline_Anisotropy(obj);
+                obj = MagnetoCrystalline_Anisotropy_Field(obj);
                 
                 %magnetoelastic anisotropy
                 obj.H1_ME = @(m1,m2,m3,s1,s2,s3,s4,s5,s6) -1/(obj.MP.mu0*obj.MP.Ms).*( ...
@@ -157,7 +157,7 @@ classdef MSEffectiveFields_< matlab.mixin.Copyable
 end
 
 %% Function for class only
-function obj = MagnetoCrystalline_Anisotropy(obj)
+function obj = MagnetoCrystalline_Anisotropy_Field(obj)
 crystal = obj.MP.Crystal;
 K = obj.MP.K_mca;
 switch crystal
@@ -195,6 +195,20 @@ function obj = assign_fields(obj,name)
 %Determine unique variables
 [variable_set,list] = MS.Energy_argument_list(obj);
 unique_variables = unique([variable_set{:}]);
+
+name_ind1 = strfind(list,name);
+name_ind2 = false(size(name_ind1));
+for i = 1:numel(name_ind1)
+    switch isempty(name_ind1{i})
+        case 0
+            name_ind2(i) = true;
+        case 1
+            name_ind2(i) = false;
+    end
+end
+
+variable_set = variable_set(name_ind2);
+list = list(name_ind2);
 
 %assemble total energy
 eval_str = ['obj.',list{1},['(',strjoin(variable_set{1},','),')']];

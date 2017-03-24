@@ -321,6 +321,8 @@ classdef MSModel_<handle
                 model.particles{i+1}.State.set_state(sin(ang_solved(:,2*i+1)).*cos(ang_solved(:,2*i+2)),'Dyn_m1');
                 model.particles{i+1}.State.set_state(sin(ang_solved(:,2*i+1)).*sin(ang_solved(:,2*i+2)),'Dyn_m2');
                 model.particles{i+1}.State.set_state(cos(ang_solved(:,2*i+1)),'Dyn_m3');
+                model.particles{i+1}.State.set_state(ang_solved(:,2*i+1),'Dyn_theta');
+                model.particles{i+1}.State.set_state(ang_solved(:,2*i+2),'Dyn_phi');
             end                       
         end %Dynamic_MH_LLG()              
                 
