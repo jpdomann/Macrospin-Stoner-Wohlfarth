@@ -9,6 +9,8 @@ classdef MSPlot_ < matlab.mixin.Copyable
         plot_handle     %can be returned from plot functions
         frame_data      %used to create animations
         animation_view  %view for animations (2,3 or [Az El]), see: view
+        file_name       %name to output file (image or movie)
+        save_frames     %save frames to output a movie file (true / false)
     end
     properties (SetAccess = protected)
         Source_field_names
@@ -16,8 +18,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
     end
     
     properties (Access = protected)
-        model 
-        save_frames     %save frames to output a movie file        
+        model              
         animation_zoom  %zoom level for animations
     end
     
@@ -49,6 +50,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
             obj.save_frames = false;
             obj.animation_view = 3;
             obj.animation_zoom = 1; 
+            obj.file_name = 'file';
         end
         
         %% Plot initial geometry / prepare animation plot
@@ -280,6 +282,7 @@ classdef MSPlot_ < matlab.mixin.Copyable
             % which particles to plot, as well as a string indicating if
             % the static or dynamic values should be plotted            
             
+            %% initial setup
             %initial input check
             switch isnumeric(particle_nums) && all(ismember(data_type,{'static','dynamic'})) && (numel(data_type)==numel(particle_nums) || numel(data_type)==1 )
                 case 0
@@ -392,32 +395,8 @@ classdef MSPlot_ < matlab.mixin.Copyable
             
         end %Animate_Spins
                   
-        %% Save movie
-        function [obj,h] = make_movie(obj,particle_nums,data_type, fname,varargin)
-            obj.save_frames = true;
-            obj.animation_zoom = 1;
-%             obj.animation_view = [-21 22]; 
-%             obj.animation_view = [3]; 
-%             fname = 'bennet-clocking-2';
-            %generate data
-            [~,h] = obj.Animate_Spins(particle_nums,data_type);
-            
-            %write movie
-            frames = obj.frame_data;
-            vid_profile = 'Motion JPEG AVI'; %SEE: VideoWriter - profiles 'MPEG-4', 'Motion JPEG AVI', 'Motion JPEG 2000', 'Uncompressed AVI'
-            writerObj = VideoWriter(fname,vid_profile);
-            writerObj.Quality = 100;
-            open(writerObj)
-            for i = 1:numel(frames)
-                writeVideo(writerObj,frames(i));
-            end
-            close(writerObj)
-            
-            %restore default to NOT storing movie frames
-            obj.save_frames = false;
-        end
-    
-        function [obj,h] = animate_energy_2d(obj,particle_num,data_type,varargin)
+        %% Energy plots
+           function [obj,h] = animate_energy_2d(obj,particle_num,data_type,varargin)
             %Plot the 2D energy surface for the indicated particles
             % data should be entered as an array containing the numbers of
             % which particles to plot
@@ -532,27 +511,36 @@ classdef MSPlot_ < matlab.mixin.Copyable
             
             %create first figure object
             fig = figure(obj.fig_num);
-            clf            
+            clf
             
-            ax(1) = subplot(2,1,1);
-            hline{1} = plot(theta,[U_H(1)'-U_min(1),...
-                U_D(1)'-U_min(2),...
+            ax(1) = gca;%subplot(2,1,1);
+            hline{1} = plot(theta,[...
                 U_ME(1)'-U_min(3),...
-                U_EB(1)'-U_min(4),...
-                U_UNI(1)'-U_min(5),...
-                U_D_UNI(1)'-U_min(6),... 
                 U_MCA(1)'-U_min(7),...
-                U_TOT(1)'-U_min(8)]);
-            hline{1}(1).DisplayName = 'H';
-            hline{1}(2).DisplayName = 'D';
-            hline{1}(3).DisplayName = 'ME';
-%             hline{1}(3).Marker = '.';
-            hline{1}(4).DisplayName = 'EB';
-            hline{1}(5).DisplayName = 'UNI';
-            hline{1}(6).DisplayName = 'D+UNI';
-            hline{1}(7).DisplayName = 'MCA';            
-            hline{1}(8).DisplayName = 'TOT';            
+                U_TOT(1)'-U_min(8)],'LineWidth',2);
+            %             hline{1} = plot(theta,[U_H(1)'-U_min(1),...
+            %                 U_D(1)'-U_min(2),...
+            %                 U_ME(1)'-U_min(3),...
+            %                 U_EB(1)'-U_min(4),...
+            %                 U_UNI(1)'-U_min(5),...
+            %                 U_D_UNI(1)'-U_min(6),...
+            %                 U_MCA(1)'-U_min(7),...
+            %                 U_TOT(1)'-U_min(8)]);
+            %             hline{1}(1).DisplayName = 'H';
+            %             hline{1}(2).DisplayName = 'D';
+            %             hline{1}(3).DisplayName = 'ME';
+            %             hline{1}(3).Marker = '.';
+            %             hline{1}(4).DisplayName = 'EB';
+            %             hline{1}(5).DisplayName = 'UNI';
+            %             hline{1}(6).DisplayName = 'D+UNI';
+            %             hline{1}(7).DisplayName = 'MCA';
+            %             hline{1}(8).DisplayName = 'TOT';
+            
+            hline{1}(1).DisplayName = 'U_{STRAIN}';
+            hline{1}(2).DisplayName = 'U_{CRYSTAL}';
+            hline{1}(3).DisplayName = 'U_{TOTAL}';
             leg(1) = legend('show');
+            
             uistack(hline{1}(1),'bottom')
             
             
@@ -561,61 +549,118 @@ classdef MSPlot_ < matlab.mixin.Copyable
 %             ylim([10^(log10(U_range)-1) U_range])
             xlabel('\theta (deg)')
             ylabel('U (J/m^3)')
+            ax.FontSize = 14;
+            ax.FontWeight = 'bold';
+            
+            grid on
 %             ax(1).YScale = 'log';
             
-            ax(2) = subplot(2,1,2);            
-            hline{2}(1) = energy_plot(U_H,theta,min(U_min),U_range(end),1,'H');
-            hold all
-            hline{2}(2) = energy_plot(U_D,theta,min(U_min),U_range(end),1,'D');
-            hline{2}(3) = energy_plot(U_ME,theta,min(U_min),U_range(end),1,'ME');
-            hline{2}(4) = energy_plot(U_EB,theta,min(U_min),U_range(end),1,'EB');
-            hline{2}(5) = energy_plot(U_UNI,theta,min(U_min),U_range(end),1,'UNI');            
-            hline{2}(6) = energy_plot(U_TOT,theta,min(U_min),U_range(end),1,'TOT');                                  
-           
-            xlim([-1,1])
-            ylim([-1 1])            
-            xlabel('m_x')
-            ylabel('m_y')
+%             ax(2) = subplot(2,1,2);            
+%             hline{2}(1) = energy_plot(U_H,theta,min(U_min),U_range(end),1,'H');
+%             hold all
+%             hline{2}(2) = energy_plot(U_D,theta,min(U_min),U_range(end),1,'D');
+%             hline{2}(3) = energy_plot(U_ME,theta,min(U_min),U_range(end),1,'ME');
+%             hline{2}(4) = energy_plot(U_EB,theta,min(U_min),U_range(end),1,'EB');
+%             hline{2}(5) = energy_plot(U_UNI,theta,min(U_min),U_range(end),1,'UNI');            
+%             hline{2}(6) = energy_plot(U_TOT,theta,min(U_min),U_range(end),1,'TOT');                                  
+%            
+%             xlim([-1,1])
+%             ylim([-1 1])            
+%             xlabel('m_x')
+%             ylabel('m_y')
             
-            %% Animate
+            %% Animate     
+            npts = numel(H1);            
+            
+            switch npts >= 1000
+                case 1
+                    spacing = round(npts / 1000); %plot a total of 1000 points
+                    %                     spacing = 1;
+                case 0
+                    spacing = 1;
+            end
+            
+            %initialize frame structure
+            if obj.save_frames
+                obj.frame_data = getframe(gcf);
+                obj.frame_data(floor(numel(H1)/spacing)) = getframe(gcf);
+            end
+            %animate frames
+            count = 1;
             for j = 1:1
-                for i = 1:numel(H1)
+                for i = 1:spacing:numel(H1)
+                    hline{1}(1).YData = U_ME(i)'-U_min(3);                    
+                    hline{1}(2).YData = U_MCA(i)'-U_min(7);
+                    hline{1}(3).YData = U_TOT(i)'-U_min(8);
                     
-                    subplot(2,1,1)
-                    hline{1}(1).YData = U_H(i)'-U_min(1);
-                    hline{1}(2).YData = U_D(i)'-U_min(2);
-                    hline{1}(3).YData = U_ME(i)'-U_min(3);
-                    hline{1}(4).YData = U_EB(i)'-U_min(4);
-                    hline{1}(5).YData = U_UNI(i)'-U_min(5);                    
-                    hline{1}(7).YData = U_MCA(i)'-U_min(7);
-                    hline{1}(8).YData = U_TOT(i)'-U_min(8);
-                    
-                    subplot(2,1,2)
-                    [X,Y] = pol2cart(pi/180*theta',(U_H(i)'- min(U_min))/U_range(end) );
-                    hline{2}(1).XData = X;  hline{2}(1).YData = Y;
-                    
-                    [X,Y] = pol2cart(pi/180*theta',(U_D(i)'- min(U_min))/U_range(end) );
-                    hline{2}(2).XData = X;  hline{2}(2).YData = Y;
-                    
-                    [X,Y] = pol2cart(pi/180*theta',(U_ME(i)'- min(U_min))/U_range(end) );
-                    hline{2}(3).XData = X;  hline{2}(3).YData = Y;
-                    
-                    [X,Y] = pol2cart(pi/180*theta',(U_EB(i)'- min(U_min))/U_range(end) );
-                    hline{2}(4).XData = X;  hline{2}(4).YData = Y;
-                    
-                    [X,Y] = pol2cart(pi/180*theta',(U_UNI(i)'- min(U_min))/U_range(end) );
-                    hline{2}(5).XData = X;  hline{2}(5).YData = Y;
-                    
-                    [X,Y] = pol2cart(pi/180*theta',(U_TOT(i)'- min(U_min))/U_range(end) );
-                    hline{2}(6).XData = X;  hline{2}(6).YData = Y;
-                    
+%                     subplot(2,1,1)
+%                     hline{1}(1).YData = U_H(i)'-U_min(1);
+%                     hline{1}(2).YData = U_D(i)'-U_min(2);
+%                     hline{1}(3).YData = U_ME(i)'-U_min(3);
+%                     hline{1}(4).YData = U_EB(i)'-U_min(4);
+%                     hline{1}(5).YData = U_UNI(i)'-U_min(5);                    
+%                     hline{1}(7).YData = U_MCA(i)'-U_min(7);
+%                     hline{1}(8).YData = U_TOT(i)'-U_min(8);                    
+%                     subplot(2,1,2)
+%                     [X,Y] = pol2cart(pi/180*theta',(U_H(i)'- min(U_min))/U_range(end) );
+%                     hline{2}(1).XData = X;  hline{2}(1).YData = Y;
+%                     
+%                     [X,Y] = pol2cart(pi/180*theta',(U_D(i)'- min(U_min))/U_range(end) );
+%                     hline{2}(2).XData = X;  hline{2}(2).YData = Y;
+%                     
+%                     [X,Y] = pol2cart(pi/180*theta',(U_ME(i)'- min(U_min))/U_range(end) );
+%                     hline{2}(3).XData = X;  hline{2}(3).YData = Y;
+%                     
+%                     [X,Y] = pol2cart(pi/180*theta',(U_EB(i)'- min(U_min))/U_range(end) );
+%                     hline{2}(4).XData = X;  hline{2}(4).YData = Y;
+%                     
+%                     [X,Y] = pol2cart(pi/180*theta',(U_UNI(i)'- min(U_min))/U_range(end) );
+%                     hline{2}(5).XData = X;  hline{2}(5).YData = Y;
+%                     
+%                     [X,Y] = pol2cart(pi/180*theta',(U_TOT(i)'- min(U_min))/U_range(end) );
+%                     hline{2}(6).XData = X;  hline{2}(6).YData = Y;
+
+                    %Save frames to create movie
+                    if obj.save_frames
+                        obj.frame_data(count) = getframe(gcf);
+                        count = count + 1;
+                    end
+
                     drawnow
                 end
             end
             
         end
-        
-        %%
+                       
+        %% Save movie
+        function [obj,h] = make_movie(obj,varargin)
+%             obj.save_frames = true;
+            obj.animation_zoom = 1;
+%             obj.animation_view = [-21 22]; 
+%             obj.animation_view = [3]; 
+%             fname = 'bennet-clocking-2';
+            %generate data
+%             [~,h] = obj.Animate_Spins(particle_nums,data_type);
+            
+            %write movie
+            frames = obj.frame_data;
+            if isempty(frames)
+                error('must save frames before writing a movie')
+            end
+            vid_profile = 'Motion JPEG AVI'; %SEE: VideoWriter - profiles 'MPEG-4', 'Motion JPEG AVI', 'Motion JPEG 2000', 'Uncompressed AVI'
+            writerObj = VideoWriter(obj.file_name,vid_profile);
+            writerObj.Quality = 100;
+            open(writerObj)
+            for i = 1:numel(frames)
+                writeVideo(writerObj,frames(i));
+            end
+            close(writerObj)
+            
+            %restore default to NOT storing movie frames
+            obj.save_frames = false;
+        end
+    
+      %%
         
     end
 end
@@ -632,9 +677,6 @@ function [h] = energy_plot(U,theta,umin,urange,i,str)
 h = plot(X,Y,'DisplayName',str);
 
 end
-
-
-
 
 %% Plot Data
 % %create a spherical grid of possble m orientations
